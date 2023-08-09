@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION is the build version number.
-var VERSION = "1.0.1"
+var VERSION = "1.1.0"
 var logger = verbose.Auto()
 
 func main() {
@@ -96,6 +96,42 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GenerateRPM(file string, arch string, version string, buildArea string, output string) {
+	err := os.Mkdir(output, 0777)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err)
+	}
+
+	rpmJSON := Package{}
+
+	if err = rpmJSON.Load(file); err != nil {
+		log.Fatal(err)
+	}
+
+	if buildArea, err = filepath.Abs(buildArea); err != nil {
+		log.Fatal(err)
+	}
+
+	if err = rpmJSON.Normalize(arch, version); err != nil {
+		log.Fatal(err)
+	}
+
+	err = rpmJSON.InitializeBuildArea(buildArea)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err = rpmJSON.WriteSpecFile("", buildArea); err != nil {
+		log.Fatal(err)
+	}
+
+	if err = rpmJSON.RunBuild(buildArea, output); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("\n\nAll done!")
 }
 
 func generateSpec(c *cli.Context) error {
