@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION is the build version number.
-var VERSION = "0.0.0"
+var VERSION = "1.0.0"
 var logger = verbose.Auto()
 
 func main() {
