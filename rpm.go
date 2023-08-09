@@ -1,4 +1,4 @@
-package rpm
+package main
 
 import (
 	"encoding/json"
@@ -14,12 +14,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/mattn/go-zglob"
-	"github.com/mh-cbon/go-bin-rpm/stringexec"
-	"github.com/mh-cbon/verbose"
 	"github.com/pkg/errors"
 )
-
-var logger = verbose.Auto()
 
 // Package contains the build information
 type Package struct {
@@ -255,7 +251,8 @@ func (p *Package) RunBuild(buildAreaPath string, output string) error {
 	if v.Prerelease() != "" {
 		pkg = fmt.Sprintf("%s/RPMS/%s/%s-%s.%s.%s.rpm", buildAreaPath, arch, p.Name, p.Version, p.Release, arch)
 	}
-	return cp(output, pkg)
+	dst := fmt.Sprintf("%s/%s-%s.%s.%s.rpm", output, p.Name, p.Version, p.Release, arch)
+	return cp(dst, pkg)
 }
 
 // GenerateSpecFile generates the spec file.
@@ -522,7 +519,7 @@ func (p *Package) GetChangelogContent() (string, error) {
 	} else if p.ChangelogCmd != "" {
 		wd, err = os.Getwd()
 		if err == nil {
-			cmd, err = stringexec.Command(wd, p.ChangelogCmd)
+			cmd, err = Command(wd, p.ChangelogCmd)
 			if err == nil {
 				cmd.Stdout = nil
 				c, err = cmd.Output()
@@ -675,7 +672,7 @@ func contains(l []string, v string) bool {
 	return false
 }
 
-func cp(dst, src string) error {
+func cp(dst string, src string) error {
 	s, err := os.Open(src)
 	if err != nil {
 		return errors.WithStack(err)

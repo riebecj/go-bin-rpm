@@ -1,4 +1,4 @@
-package stringexec
+package main
 
 import (
 	"io/ioutil"

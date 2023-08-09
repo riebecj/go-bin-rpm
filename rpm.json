@@ -2,12 +2,11 @@
   "name": "go-bin-rpm",
   "summary": "Create binary rpm package with ease",
   "description": "Create binary rpm package with ease",
-  "changelog-cmd": "changelog rpm",
   "license": "LICENSE",
   "url": "https://github.com/mh-cbon/go-bin-rpm",
   "files": [
     {
-      "from": "build/!arch!/go-bin-rpm",
+      "from": "go-bin-rpm",
       "to": "%{_bindir}/",
       "base": "build/!arch!/",
       "type": ""

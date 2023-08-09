@@ -6,3 +6,7 @@
 /demo/.vagrant
 /vendor/
 /.glide
+go-bin-rpm
+pkg-build/
+dist/
+.idea/
