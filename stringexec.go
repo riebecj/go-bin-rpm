@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -19,11 +18,11 @@ func Command(cwd string, cmd string) (*exec.Cmd, error) {
 
 // ExecStringWindows exec given string on cmd
 func ExecStringWindows(cwd string, cmd string) (*exec.Cmd, error) {
-	dir, err := ioutil.TempDir("", "stringexec")
+	dir, err := os.MkdirTemp("", "stringexec")
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	err = ioutil.WriteFile(dir+"/some.bat", []byte(cmd), 0766)
+	err = os.WriteFile(dir+"/some.bat", []byte(cmd), 0766)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

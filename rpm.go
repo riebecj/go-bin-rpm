@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -46,10 +45,10 @@ type Package struct {
 }
 
 type fileInstruction struct {
-	From string `json:"from, omitempty"`
-	To   string `json:"to, omitempty"`
-	Base string `json:"base, omitempty"`
-	Type string `json:"type, omitempty"`
+	From string `json:"from,omitempty"`
+	To   string `json:"to,omitempty"`
+	Base string `json:"base,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 type menu struct {
@@ -73,7 +72,7 @@ func (p *Package) Load(file string) error {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return errors.Errorf("json file '%s' does not exist: %s", file, err.Error())
 	}
-	byt, err := ioutil.ReadFile(file)
+	byt, err := os.ReadFile(file)
 	if err != nil {
 		return errors.Errorf("error occured while reading file '%s': %s", file, err.Error())
 	}
@@ -216,7 +215,7 @@ func (p *Package) WriteSpecFile(sourceDir string, buildAreaPath string) error {
 		return errors.WithStack(err)
 	}
 	path := filepath.Join(buildAreaPath, "SPECS", p.Name+".spec")
-	return ioutil.WriteFile(path, []byte(spec), 0644)
+	return os.WriteFile(path, []byte(spec), 0644)
 }
 
 // RunBuild executes the build of buildAreaPath.
@@ -244,14 +243,16 @@ func (p *Package) RunBuild(buildAreaPath string, output string) error {
 	// otherwise
 	// [name]-[version]-[release].[arch].rpm
 	pkg := fmt.Sprintf("%s/RPMS/%s/%s-%s-%s.%s.rpm", buildAreaPath, arch, p.Name, p.Version, p.Release, arch)
+	dst := fmt.Sprintf("%s/%s-%s-%s.%s.rpm", output, p.Name, p.Version, p.Release, arch)
 	v, err := semver.NewVersion(p.Version)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	if v.Prerelease() != "" {
 		pkg = fmt.Sprintf("%s/RPMS/%s/%s-%s.%s.%s.rpm", buildAreaPath, arch, p.Name, p.Version, p.Release, arch)
+		dst = fmt.Sprintf("%s/%s-%s.%s.%s.rpm", output, p.Name, p.Version, p.Release, arch)
 	}
-	dst := fmt.Sprintf("%s/%s-%s.%s.%s.rpm", output, p.Name, p.Version, p.Release, arch)
+
 	return cp(dst, pkg)
 }
 
@@ -513,7 +514,7 @@ func (p *Package) GetChangelogContent() (string, error) {
 	var wd string
 	var cmd *exec.Cmd
 	if p.ChangelogFile != "" {
-		if c, err = ioutil.ReadFile(p.ChangelogFile); err == nil {
+		if c, err = os.ReadFile(p.ChangelogFile); err == nil {
 			return string(c), nil
 		}
 	} else if p.ChangelogCmd != "" {
@@ -537,7 +538,7 @@ func (p *Package) WriteShortcutFiles() ([]string, error) {
 
 	files := make([]string, 0)
 
-	tpmDir, err := ioutil.TempDir("", "rpm-desktops")
+	tpmDir, err := os.MkdirTemp("", "rpm-desktops")
 	if err != nil {
 		return files, errors.WithStack(err)
 	}
@@ -613,7 +614,7 @@ func (p *Package) WriteShortcutFiles() ([]string, error) {
 
 			files = append(files, file)
 
-			if err := ioutil.WriteFile(file, []byte(s), 0644); err != nil {
+			if err := os.WriteFile(file, []byte(s), 0644); err != nil {
 				return files, errors.WithStack(err)
 			}
 		}
@@ -627,7 +628,7 @@ func (p *Package) WriteEnvFile() (string, error) {
 
 	file := ""
 
-	tpmDir, err := ioutil.TempDir("", "rpm-envs")
+	tpmDir, err := os.MkdirTemp("", "rpm-envs")
 	if err != nil {
 		return file, errors.WithStack(err)
 	}
@@ -644,7 +645,7 @@ func (p *Package) WriteEnvFile() (string, error) {
 		content += fmt.Sprintf("export %s\n", k)
 	}
 
-	return file, errors.WithStack(ioutil.WriteFile(file, []byte(content), 0644))
+	return file, errors.WithStack(os.WriteFile(file, []byte(content), 0644))
 }
 
 type fileItem struct {
@@ -677,20 +678,28 @@ func cp(dst string, src string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer s.Close()
+	defer func(s *os.File) {
+		err := s.Close()
+		if err != nil {
+
+		}
+	}(s)
 	d, err := os.Create(dst)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	if _, err := io.Copy(d, s); err != nil {
-		d.Close()
+		err := d.Close()
+		if err != nil {
+			return err
+		}
 		return errors.WithStack(err)
 	}
 	return d.Close()
 }
 
 func readFile(src string) string {
-	c, err := ioutil.ReadFile(src)
+	c, err := os.ReadFile(src)
 	if err != nil {
 		return ""
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION is the build version number.
-var VERSION = "1.0.0"
+var VERSION = "1.0.1"
 var logger = verbose.Auto()
 
 func main() {
@@ -68,6 +68,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "o, output",
+					Value: "dist/",
 					Usage: "File path to the resulting rpm file",
 				},
 				cli.StringFlag{
@@ -130,13 +131,9 @@ func generatePkg(c *cli.Context) error {
 	buildArea := c.String("build-area")
 	output := c.String("output")
 
-	if output == "" {
-		return cli.NewExitError("--output,-o argument is required", 1)
-	} else {
-		err := os.Mkdir(output, 0777)
-		if err != nil && !os.IsExist(err) {
-			log.Fatal(err)
-		}
+	err = os.Mkdir(output, 0777)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err)
 	}
 
 	rpmJSON := Package{}
